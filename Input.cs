@@ -7,7 +7,12 @@ public class Inputs : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Debug.Log("Input-G Branch Test");
+        Debug.Log("Input-G");
+    }
+
+    private void FixedUpdate()
+    {
+        Debug.Log("Input-G");
     }
 
     // Update is called once per frame
