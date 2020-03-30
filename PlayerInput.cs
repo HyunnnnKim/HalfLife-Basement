@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Locomotion : MonoBehaviour
+public class PlayerInput : MonoBehaviour
 {
+    
     
 }
