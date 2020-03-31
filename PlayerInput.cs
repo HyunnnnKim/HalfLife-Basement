@@ -21,17 +21,17 @@ public class PlayerInput : Singleton<PlayerInput>
 
     public struct CommonButtonStatus
     {
-        public bool primary;
-        public bool thumb;
+        public bool primaryButton;
+        public bool thumbButton;
         public bool thumbTouch;
-        public bool grip;
-        public bool trigger;
+        public bool gripButton;
+        public bool triggerButton;
     }
     public struct CommonAxisStatus
     {
-        public Vector2 thumb;
-        public float trigger;
-        public float grip;
+        public Vector2 thumb2DAxis;
+        public float triggerAxis;
+        public float gripAxis;
     }
     public struct OtherButtonStatus
     {
@@ -69,52 +69,48 @@ public class PlayerInput : Singleton<PlayerInput>
         UpdateInput(ref rightHandDevice, ref rightHand);
     }
 
-    bool FindDevicesAtXRNode()
+    void FindDevicesAtXRNode()
     {
         InputDevices.GetDevicesAtXRNode(XRNode.Head, headDevices);
         InputDevices.GetDevicesAtXRNode(XRNode.LeftHand, leftHandDevices);
         InputDevices.GetDevicesAtXRNode(XRNode.RightHand, rightHandDevices);
 
-        return (CheckAndAssignDevice(ref headDevice, ref headDevices) == 1)
-            && (CheckAndAssignDevice(ref leftHandDevice, ref leftHandDevices) == 1)
-            && (CheckAndAssignDevice(ref rightHandDevice, ref rightHandDevices) == 1);
+        CheckAndAssignDevice(ref headDevice, ref headDevices);
+        CheckAndAssignDevice(ref leftHandDevice, ref leftHandDevices);
+        CheckAndAssignDevice(ref rightHandDevice, ref rightHandDevices);
     }
 
     //TODO : Think how to proceed when devices count is zero or higher than one. And write some code.
-    int CheckAndAssignDevice(ref InputDevice device, ref List<InputDevice> devices)
+    void CheckAndAssignDevice(ref InputDevice device, ref List<InputDevice> devices)
     {
         if (devices.Count == 1) //Fine
         {
             device = devices[0];
             Debug.Log(string.Format("Device name '{0}' with role '{1}'", device.name, device.role.ToString()));
-            return 1;
         }
         else if (headDevices.Count > 1)//WTF do you plug devices more than one?
         {
             Debug.Log("Found more than one device!");
-            return 2;
         }
         else if (headDevices.Count == 0)//plug your device
         {
             Debug.Log("found no device!");
-            return 0;
         }
-        return -1;
     }
 
     void UpdateInput(ref InputDevice device, ref WhichHand hand)
     {
         //CommonButtonStatus
-        device.TryGetFeatureValue(CommonUsages.gripButton, out hand.commonButtonStatus.grip);
-        device.TryGetFeatureValue(CommonUsages.primaryButton, out hand.commonButtonStatus.primary);
-        device.TryGetFeatureValue(CommonUsages.primary2DAxisClick, out hand.commonButtonStatus.thumb);
+        device.TryGetFeatureValue(CommonUsages.gripButton, out hand.commonButtonStatus.gripButton);
+        device.TryGetFeatureValue(CommonUsages.primaryButton, out hand.commonButtonStatus.primaryButton);
+        device.TryGetFeatureValue(CommonUsages.primary2DAxisClick, out hand.commonButtonStatus.thumbButton);
         device.TryGetFeatureValue(CommonUsages.primary2DAxisTouch, out hand.commonButtonStatus.thumbTouch);
-        device.TryGetFeatureValue(CommonUsages.triggerButton, out hand.commonButtonStatus.trigger);
+        device.TryGetFeatureValue(CommonUsages.triggerButton, out hand.commonButtonStatus.triggerButton);
 
         //CommonAxisStatus
-        device.TryGetFeatureValue(CommonUsages.grip, out hand.commonAxisStatus.grip);
-        device.TryGetFeatureValue(CommonUsages.primary2DAxis, out hand.commonAxisStatus.thumb);
-        device.TryGetFeatureValue(CommonUsages.trigger, out hand.commonAxisStatus.trigger);
+        device.TryGetFeatureValue(CommonUsages.grip, out hand.commonAxisStatus.gripAxis);
+        device.TryGetFeatureValue(CommonUsages.primary2DAxis, out hand.commonAxisStatus.thumb2DAxis);
+        device.TryGetFeatureValue(CommonUsages.trigger, out hand.commonAxisStatus.triggerAxis);
 
         //OtherButtonStatus
         device.TryGetFeatureValue(CommonUsages.menuButton, out hand.otherButtonStatus.menuButton);
@@ -128,11 +124,11 @@ public class PlayerInput : Singleton<PlayerInput>
         device.TryGetFeatureValue(CommonUsages.secondary2DAxis, out hand.otherAxisStatus.secondary2DAxis);
     }
 
-    public WhichHand GetLeftHand()
+    public WhichHand GetLeftHandInputData()
     {
         return leftHand;
     }
-    public WhichHand GetRightHand()
+    public WhichHand GetRightHandInputData()
     {
         return rightHand;
     }
