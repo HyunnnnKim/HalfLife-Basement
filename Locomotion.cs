@@ -105,7 +105,7 @@ public class Locomotion : LocomotionProvider
         return 1 + m_runAccelerationAmount * playerinput.GetLeftHandInputData().commonAxisStatus.triggerAxis;
     }
 
-    //TODO: need some change to netural gravity
+    //TODO: make gravity naturally
     private void ApplyGravity()
     {
         Vector3 gravity = new Vector3(0, Physics.gravity.y * m_gravityMultiplier, 0);
