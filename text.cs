@@ -8,11 +8,13 @@ using HalfLife.Movement;
 public class text : MonoBehaviour
 {
     private TextMeshPro tmp;
-    private PlayerInput pi;
+    private ControllerInput ci;
+    private string textval;
+
 
     void Start()
     {
-        pi = PlayerInput.Instance;
+        ci = ControllerInput.Instance;
         tmp = GetComponent<TextMeshPro>();
         tmp.text = "hi";
     }
@@ -20,8 +22,8 @@ public class text : MonoBehaviour
 
     void Update()
     {
-        //tmp.text = pi.GetInput().ToString();
-        tmp.text = pi.get
-
+        textval = ci.getRightHand.primary2DValue + "-------\n";
+        textval += ci.getLeftHand.primary2DValue + "-------\n";
+        tmp.text = textval;
     }
 }
