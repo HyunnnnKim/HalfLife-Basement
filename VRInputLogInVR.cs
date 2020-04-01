@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using VRcustom;
 
 public class VRInputLogInVR : MonoBehaviour
 {
