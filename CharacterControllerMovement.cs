@@ -3,31 +3,43 @@ using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit;
 
-namespace HalfLife.Movement {
-    public class Locomotion : LocomotionProvider {
-        public float speed = 1.0f;
-        public float gravityMultiplier = 1.0f;
+
+namespace HalfLife.Movement
+{
+    public class CharacterControllerMovement : LocomotionProvider
+    {
+        
+
+        [SerializeField] private Vector2 position;
+
         public List<XRController> controllers = null;
 
         private CharacterController cc = null;
         private GameObject head = null;
 
-        protected override void Awake () {
+        public float speed = 1.0f;
+        public float gravityMultiplier = 1.0f;
+        protected override void Awake()
+        {
+ 
+        }
+
+        private void Start()
+        {
             cc = GetComponent<CharacterController>();
-            head = GetComponent<XRRig> ().cameraGameObject;
+            head = GetComponent<XRRig>().cameraGameObject;
+            PostionController();
         }
 
-        private void Start () {
-            PostionController ();
-        }
-
-        private void Update () {
-            PostionController ();
+        private void Update()
+        {
+            PostionController();
             CheckForInput();
         }
 
-        private void PostionController () {
-            float headHeight = Mathf.Clamp (head.transform.localPosition.y, 1, 2);
+        private void PostionController()
+        {
+            float headHeight = Mathf.Clamp(head.transform.localPosition.y, 1, 2);
             cc.height = headHeight;
 
             Vector3 newCenter = Vector3.zero;
@@ -42,9 +54,9 @@ namespace HalfLife.Movement {
 
         private void CheckForInput()
         {
-            foreach(XRController controller in controllers)
+            foreach (XRController controller in controllers)
             {
-                if(controller.enableInputActions)
+                if (controller.enableInputActions)
                 {
                     CheckForMovement(controller.inputDevice);
                 }
@@ -53,7 +65,7 @@ namespace HalfLife.Movement {
 
         private void CheckForMovement(InputDevice device)
         {
-            if(device.TryGetFeatureValue(CommonUsages.primary2DAxis, out Vector2 position))
+            if (device.TryGetFeatureValue(CommonUsages.primary2DAxis, out position))
             {
                 StartMove(position);
             }
@@ -76,6 +88,11 @@ namespace HalfLife.Movement {
             gravity.y *= Time.deltaTime;
 
             cc.Move(gravity * Time.deltaTime);
+        }
+
+        public Vector2 GetInput()
+        {
+            return position;
         }
 
     }
