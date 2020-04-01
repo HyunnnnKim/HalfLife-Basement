@@ -14,79 +14,108 @@ namespace HalfLife.Movement
             [SerializeField] private float speed = 12f;
             [SerializeField] private float gravity = -9.81f;
             [SerializeField] private float jumpHeight = 3f;
+            [SerializeField] private float rotationSensitivity = 100f;
 
             [Header("Player Status")]
+            [SerializeField] private Transform player;
             [SerializeField] private bool jumpKeyDown;
             [SerializeField] private Vector3 velocity;
             [SerializeField] private bool isGrounded = true;
         #endregion
         
         #region Non-Serialized Variables
-            private ControllerInput controllerInput;
-            private CharacterController cc;
-            private GameObject head;
-            private Vector2 position;
+            private ControllerInput _controllerInput;
+            private CharacterController _cc;
+            private GameObject _head;
+            private Vector2 _position;
+            private Vector2 _rotation;
             private Vector3 _groundPoint;
+            private Vector3 _lookDirection;
+            private Vector3 _targetDirection;
 
+            private float h, v;
         #endregion
 
         #region BuiltIn Methods
             protected override void Awake()
             {
-                controllerInput = ControllerInput.Instance;
+                _controllerInput = ControllerInput.Instance;
 
-                cc = GetComponent<CharacterController>();
-                head = GetComponent<XRRig>().cameraGameObject;
+                _cc = GetComponent<CharacterController>();
+                _head = GetComponent<XRRig>().cameraGameObject;
             }
 
             private void Start()
             {
-                PostionController();
+                Postion();
             }
 
             void Update()
             {
-                position = controllerInput.getLeftHand.primary2DValue;
-                jumpKeyDown = controllerInput.getRightHand.primaryButtonPressed;
+                _position = _controllerInput.getLeftHand.primary2DValue;
+                _rotation = _controllerInput.getRightHand.secondary2DValue;
+                jumpKeyDown = _controllerInput.getRightHand.primaryButtonPressed;
+
+                // _lookDirection += new Vector3(_rotation.x, _rotation.y, 4096);
+
+
+                h = UnityEngine.Input.GetAxis("Horizontal");
+                v = UnityEngine.Input.GetAxis("Vertical");
             }
 
             private void FixedUpdate()
             {
-                PostionController();
+                // Postion();
+                Rotation();
                 Move();
-                CanJump();
-                Jump();
+                // CanJump();
+                // Jump();
             }
         #endregion
 
         #region Custom Methods
-            private void PostionController()
+            private void Postion()
             {
-                float headHeight = Mathf.Clamp(head.transform.localPosition.y, 1f, 2f);
-                cc.height = headHeight;
+                float headHeight = Mathf.Clamp(_head.transform.localPosition.y, 1f, 2f);
+                _cc.height = headHeight;
 
                 Vector3 newCenter = Vector3.zero;
-                newCenter.y = cc.height / 2f;
-                newCenter.y += cc.skinWidth;
+                newCenter.y = _cc.height / 2f;
+                newCenter.y += _cc.skinWidth;
 
-                newCenter.x = head.transform.localPosition.x;
-                newCenter.z = head.transform.localPosition.z;
+                newCenter.x = _head.transform.localPosition.x;
+                newCenter.z = _head.transform.localPosition.z;
 
-                cc.center = newCenter;
+                _cc.center = newCenter;
+            }
+
+            private void Rotation()
+            {
+                // Quaternion tartgetRotation = Quaternion.LookRotation(_lookDirection, Vector3.back);
+                // player.rotation = Quaternion.Lerp(player.transform.rotation, tartgetRotation, Time.deltaTime);
+
+                _lookDirection = new Vector3(h, 0f, v);
+
+                Vector3 vec = _lookDirection.normalized;
+                vec.x = Mathf.Round(vec.x);
+                vec.z = Mathf.Round(vec.z);
+                if (vec.sqrMagnitude > 0.1f)
+                    _targetDirection = vec.normalized;
+                player.transform.rotation = Quaternion.Lerp(player.transform.rotation, Quaternion.LookRotation(_targetDirection), Time.deltaTime * rotationSensitivity);
             }
 
             private void Move()
             {
-                Vector3 direction = new Vector3(position.x, 0f, position.y);
-                Vector3 headRotation = new Vector3(0f, head.transform.eulerAngles.y, 0f);
+                Vector3 direction = new Vector3(_position.x, 0f, _position.y);
+                Vector3 headRotation = new Vector3(0f, _head.transform.eulerAngles.y, 0f);
 
                 direction = Quaternion.Euler(headRotation) * direction;
 
                 Vector3 movement = direction * speed;
-                cc.Move(movement * Time.deltaTime);
+                _cc.Move(movement * Time.deltaTime);
 
                 velocity.y += gravity * Time.deltaTime;
-                cc.Move(velocity * Time.deltaTime);
+                _cc.Move(velocity * Time.deltaTime);
             }
 
             private void CanJump()
