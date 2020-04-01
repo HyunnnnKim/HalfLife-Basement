@@ -22,8 +22,9 @@ public class text : MonoBehaviour
 
     void Update()
     {
-        textval = ci.getRightHand.primary2DValue + "-------\n";
-        textval += ci.getLeftHand.primary2DValue + "-------\n";
+        textval = ci.getRightHand.primary2DValue + "----\n";
+        textval += ci.getLeftHand.primary2DValue + "----\n";
+        textval += ci.getRightHand.primaryButtonPressed + "----\n";
         tmp.text = textval;
     }
 }
