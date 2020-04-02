@@ -125,11 +125,6 @@ public class Locomotion : LocomotionProvider
 
     }
 
-    private void FixedUpdate()
-    {
-        //ApplyGravity();
-    }
-
     private void PositionController()
     {
         float headHeight = Mathf.Clamp(head.transform.localPosition.y, 1, 2);

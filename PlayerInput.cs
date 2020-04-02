@@ -70,7 +70,20 @@ namespace VRcustom
 
         void Update()
         {
-            if(!leftHandDevice.isValid || !rightHandDevice.isValid) FindDevicesAtXRNode();
+            if (!headDevice.isValid)
+            {
+                InputDevices.GetDevicesAtXRNode(XRNode.Head, headDevices);
+                CheckAndAssignDevice(ref headDevice, ref headDevices);
+            }
+            if (!leftHandDevice.isValid) {
+                InputDevices.GetDevicesAtXRNode(XRNode.LeftHand, leftHandDevices);
+                CheckAndAssignDevice(ref leftHandDevice, ref leftHandDevices);
+            }
+            if (!rightHandDevice.isValid)
+            {
+                InputDevices.GetDevicesAtXRNode(XRNode.RightHand, rightHandDevices);
+                CheckAndAssignDevice(ref rightHandDevice, ref rightHandDevices);
+            }
             UpdateInput(ref leftHandDevice, ref leftHand);
             UpdateInput(ref rightHandDevice, ref rightHand);
         }
