@@ -139,6 +139,11 @@ namespace HalfLife.Input
                 device.TryGetFeatureValue(CommonUsages.primaryTouch, out bool primaryTouchPressed);
                 hand.primaryTouchPressed = primaryTouchPressed;
 
+                device.TryGetFeatureValue(CommonUsages.secondaryButton, out bool secondaryButtonPressed);
+                hand.secondaryButtonPressed = secondaryButtonPressed;
+                device.TryGetFeatureValue(CommonUsages.secondaryTouch, out bool secondaryTouchPressed);
+                hand.secondaryTouchPressed = secondaryTouchPressed;
+
                 device.TryGetFeatureValue(CommonUsages.menuButton, out bool menuButtonPressed);
                 hand.menuButtonPressed = menuButtonPressed;
 

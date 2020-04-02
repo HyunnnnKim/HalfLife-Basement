@@ -17,6 +17,9 @@ namespace HalfLife.Movement
             private Vector2 _rotation;
             private Vector3 _groundPoint;
             private Vector3 _lookDirection;
+        #endregion
+
+        #region Public Variables
             public enum rotateType
             {
                 Snapturn,
@@ -26,18 +29,25 @@ namespace HalfLife.Movement
         #endregion
 
         #region Serialized Variables
-            [Header("Physics")]
-            [SerializeField] private float speed = 12f;
+
+            [SerializeField] private Transform player;
+
+            [Header("Movement")]
+            [SerializeField] private float walkSpeed = 5f;
+            [SerializeField] private float runSpeed = 10f;
+            [SerializeField] private float currentSpeed = 0f;
+            [SerializeField] private bool runKeyDown;
+
+            [Header("Jump")]
             [SerializeField] private float gravity = -9.81f;
             [SerializeField] private float jumpHeight = 3f;
-            [SerializeField] private float rotationSensitivity = 70f;
-
-            [Header("Player Status")]
-            [SerializeField] private Transform player;
             [SerializeField] private bool jumpKeyDown;
+
+            [SerializeField] private float rotationSensitivity = 70f;
             [SerializeField] private Vector3 velocity;
             [SerializeField] private bool isGrounded = true;
-            [SerializeField] public rotateType selectedRotation;
+            [SerializeField] private rotateType selectedRotation;
+            public rotateType SelectedRotation { get { return selectedRotation; } set { selectedRotation = value; } }
         #endregion
 
         #region BuiltIn Methods
@@ -57,8 +67,9 @@ namespace HalfLife.Movement
             {
                 _position = _controllerInput.getLeftHand.primary2DValue;
                 _rotation = _controllerInput.getRightHand.primary2DValue;
-                _lookDirection = new Vector3(_rotation.x, 0f, _rotation.y);
+                _lookDirection = transform.right * _position.x + transform.forward * _position.y;
                 jumpKeyDown = _controllerInput.getRightHand.primary2DPressed;
+                runKeyDown = _controllerInput.getLeftHand.primary2DPressed;
             }
 
             private void FixedUpdate()
@@ -116,15 +127,19 @@ namespace HalfLife.Movement
 
             private void Move()
             {
-                Vector3 direction = transform.right * _position.x + transform.forward * _position.y;
-                // Vector3 headRotation = new Vector3(0f, _head.transform.eulerAngles.y, 0f);
-                // direction = Quaternion.Euler(headRotation) * direction;
-
-                Vector3 movement = direction * speed;
-                _cc.Move(movement * Time.deltaTime);
+                if(runKeyDown)
+                    currentSpeed = runSpeed;
+                else
+                    currentSpeed = walkSpeed;
+                _cc.Move(_lookDirection * currentSpeed * Time.deltaTime);
 
                 velocity.y += gravity * Time.deltaTime;
                 _cc.Move(velocity * Time.deltaTime);
+            }
+            
+            private void CurrentSpeed()
+            {
+
             }
 
             private void CanJump()
