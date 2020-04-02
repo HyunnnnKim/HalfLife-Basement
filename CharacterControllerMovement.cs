@@ -9,20 +9,6 @@ namespace HalfLife.Movement
 {
     public class CharacterControllerMovement : LocomotionProvider
     {
-        #region Serialized Variables
-            [Header("Physics")]
-            [SerializeField] private float speed = 12f;
-            [SerializeField] private float gravity = -9.81f;
-            [SerializeField] private float jumpHeight = 3f;
-            [SerializeField] private float rotationSensitivity = 100f;
-
-            [Header("Player Status")]
-            [SerializeField] private Transform player;
-            [SerializeField] private bool jumpKeyDown;
-            [SerializeField] private Vector3 velocity;
-            [SerializeField] private bool isGrounded = true;
-        #endregion
-        
         #region Non-Serialized Variables
             private ControllerInput _controllerInput;
             private CharacterController _cc;
@@ -31,16 +17,33 @@ namespace HalfLife.Movement
             private Vector2 _rotation;
             private Vector3 _groundPoint;
             private Vector3 _lookDirection;
-            private Vector3 _targetDirection;
+            public enum rotateType
+            {
+                Snapturn,
+                SmoothRotation,
+                HeadTurn
+            }
+        #endregion
 
-            private float h, v;
+        #region Serialized Variables
+            [Header("Physics")]
+            [SerializeField] private float speed = 12f;
+            [SerializeField] private float gravity = -9.81f;
+            [SerializeField] private float jumpHeight = 3f;
+            [SerializeField] private float rotationSensitivity = 70f;
+
+            [Header("Player Status")]
+            [SerializeField] private Transform player;
+            [SerializeField] private bool jumpKeyDown;
+            [SerializeField] private Vector3 velocity;
+            [SerializeField] private bool isGrounded = true;
+            [SerializeField] public rotateType selectedRotation;
         #endregion
 
         #region BuiltIn Methods
             protected override void Awake()
             {
                 _controllerInput = ControllerInput.Instance;
-
                 _cc = GetComponent<CharacterController>();
                 _head = GetComponent<XRRig>().cameraGameObject;
             }
@@ -53,23 +56,18 @@ namespace HalfLife.Movement
             void Update()
             {
                 _position = _controllerInput.getLeftHand.primary2DValue;
-                _rotation = _controllerInput.getRightHand.secondary2DValue;
-                jumpKeyDown = _controllerInput.getRightHand.primaryButtonPressed;
-
-                // _lookDirection += new Vector3(_rotation.x, _rotation.y, 4096);
-
-
-                h = UnityEngine.Input.GetAxis("Horizontal");
-                v = UnityEngine.Input.GetAxis("Vertical");
+                _rotation = _controllerInput.getRightHand.primary2DValue;
+                _lookDirection = new Vector3(_rotation.x, 0f, _rotation.y);
+                jumpKeyDown = _controllerInput.getRightHand.primary2DPressed;
             }
 
             private void FixedUpdate()
             {
-                // Postion();
+                Postion();
                 Rotation();
                 Move();
-                // CanJump();
-                // Jump();
+                CanJump();
+                Jump();
             }
         #endregion
 
@@ -91,25 +89,36 @@ namespace HalfLife.Movement
 
             private void Rotation()
             {
-                // Quaternion tartgetRotation = Quaternion.LookRotation(_lookDirection, Vector3.back);
-                // player.rotation = Quaternion.Lerp(player.transform.rotation, tartgetRotation, Time.deltaTime);
+                switch (selectedRotation)
+                {
+                    case rotateType.Snapturn:
+                        
+                        break;
 
-                _lookDirection = new Vector3(h, 0f, v);
+                    case rotateType.SmoothRotation:
+                        float lerpTime = 1f;
+                        float currentLerpTime = 0;
 
-                Vector3 vec = _lookDirection.normalized;
-                vec.x = Mathf.Round(vec.x);
-                vec.z = Mathf.Round(vec.z);
-                if (vec.sqrMagnitude > 0.1f)
-                    _targetDirection = vec.normalized;
-                player.transform.rotation = Quaternion.Lerp(player.transform.rotation, Quaternion.LookRotation(_targetDirection), Time.deltaTime * rotationSensitivity);
+                        currentLerpTime += Time.deltaTime;
+                        if (currentLerpTime > lerpTime)
+                        {
+                            currentLerpTime = lerpTime;
+                        }
+                        float perc = currentLerpTime / lerpTime;
+                        
+                        player.Rotate(Vector3.up * _rotation.x * rotationSensitivity * perc);
+                        break;
+                    
+                    default:
+                        break;
+                }
             }
 
             private void Move()
             {
-                Vector3 direction = new Vector3(_position.x, 0f, _position.y);
-                Vector3 headRotation = new Vector3(0f, _head.transform.eulerAngles.y, 0f);
-
-                direction = Quaternion.Euler(headRotation) * direction;
+                Vector3 direction = transform.right * _position.x + transform.forward * _position.y;
+                // Vector3 headRotation = new Vector3(0f, _head.transform.eulerAngles.y, 0f);
+                // direction = Quaternion.Euler(headRotation) * direction;
 
                 Vector3 movement = direction * speed;
                 _cc.Move(movement * Time.deltaTime);

@@ -11,8 +11,8 @@ namespace HalfLife.Input
     {
         #region Devices
             [Header("Controllers")]
-            [SerializeField] private XRController leftController;
-            [SerializeField] private XRController rightController;
+            [SerializeField] private XRController leftController = null;
+            [SerializeField] private XRController rightController = null;
 
             //[SerializeField] private XRNode liftXRNode = XRNode.LeftHand;
             //[SerializeField] private XRNode rightXRNode = XRNode.RightHand;
