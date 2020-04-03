@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-namespace HalfLife.Output
+namespace HalfLight.Output
 {
     public class EventLog : MonoBehaviour
     {

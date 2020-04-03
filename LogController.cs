@@ -5,11 +5,11 @@ using UnityEngine.UI;
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit;
 using TMPro;
-using HalfLife.Movement;
+using HalfLight.Movement;
 
-namespace HalfLife.Output
+namespace HalfLight.Output
 {
-    public class LogInterface : MonoBehaviour
+    public class LogController : MonoBehaviour
     {
         #region Serialied Variables
             [SerializeField] private Button smoothBtn = null;

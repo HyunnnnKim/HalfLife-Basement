@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using HalfLife.Input;
-using HalfLife.Movement;
+using HalfLight.Input;
 
-namespace HalfLife.Output
+namespace HalfLight.Output
 {
     public class InputLog : MonoBehaviour
     {

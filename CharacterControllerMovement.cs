@@ -3,9 +3,9 @@ using System;
 using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit;
-using HalfLife.Input;
+using HalfLight.Input;
 
-namespace HalfLife.Movement
+namespace HalfLight.Movement
 {
     public class CharacterControllerMovement : LocomotionProvider
     {
@@ -76,7 +76,7 @@ namespace HalfLife.Movement
             {
                 Postion();
                 Rotation();
-                Move();
+                Movement();
                 CanJump();
                 Jump();
             }
@@ -125,7 +125,7 @@ namespace HalfLife.Movement
                 }
             }
 
-            private void Move()
+            private void Movement()
             {
                 if(runKeyDown)
                     currentSpeed = runSpeed;

@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit;
 
-namespace HalfLife.Input
+namespace HalfLight.Input
 {
     public class ControllerInput : Singleton<ControllerInput>
     {
