@@ -11,7 +11,7 @@ namespace HalfLight.Output
             private TextMeshPro eventLog;
             private string _eventLogText;
             private List<string> events = new List<string>();
-            public string eventList { get { return events[0]; } set { if(events.Count > 7) events.RemoveAt(0); events.Add(value); } }
+            public string eventList { get { return events[0]; } set { if(events.Count > 6) events.RemoveAt(0); events.Add(value); } }
         #endregion
 
         #region BuiltIn Methods
@@ -23,7 +23,7 @@ namespace HalfLight.Output
             void Update()
             {
                 _eventLogText = "EVENT\n";
-                _eventLogText += "--------------------\n";
+                _eventLogText += "---------------------\n";
                 
                 foreach (string e in events)
                 {
