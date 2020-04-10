@@ -5,13 +5,15 @@ using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using VRcustom;
 
-public class Locomotion : LocomotionProvider
+public class Locomotion_RigidBody : LocomotionProvider
 {
-    // Start is called before the first frame update
+
+ // Start is called before the first frame update
     public enum MoveDirectionType
     {
         HeadBased,
-        ControllerBased
+        ControllerBased,
+        HeadAndController
     }
     public enum TurnType
     {
@@ -19,10 +21,6 @@ public class Locomotion : LocomotionProvider
         SmoothTurn
     }
 
-
-    private PlayerInput playerinput;
-    private CharacterController characterController = null;
-    private GameObject head = null;
 
     [Header("Moving Section")]
 
@@ -53,14 +51,6 @@ public class Locomotion : LocomotionProvider
     public float TurnAmount { get { return m_TurnAmount; } set { m_TurnAmount = value; } }
 
     [SerializeField]
-    [Tooltip("The amount of time that the system will wait before starting another snap turn.")]
-    float m_DebounceTime = 0.5f;
-    /// <summary>
-    /// The amount of time that the system will wait before starting another snap turn.
-    /// </summary>
-    public float DebounceTime { get { return m_DebounceTime; } set { m_DebounceTime = value; } }
-
-    [SerializeField]
     [Tooltip("The deadzone that the controller movement will have to be above to trigger a snap turn.")]
     float m_DeadZone = 0.75f;
     /// <summary>
@@ -77,84 +67,76 @@ public class Locomotion : LocomotionProvider
     readonly int layerMask = -1 - (1 << 8);
 
     [SerializeField]
-    float m_jumpHeight = 3f;
-    public float JumpHeight { get { return m_jumpHeight; } set { m_jumpHeight = value; }  }
+    float m_jumpHeight = 2f;
+    public float JumpHeight { get { return m_jumpHeight; } set { m_jumpHeight = value; } }
 
 
     // state data
-    float m_CurrentTurnAmount = 0.0f;
-    float m_TimeStarted = 0.0f;
 
-    GameObject leftHandController;
+    private GameObject leftHandController = null;
+    private GameObject rightHandController = null;
+    private GameObject neck = null;
+    private GameObject head = null;
+    private GameObject cameraOffset = null;
+
+    private CapsuleCollider BodyCapsuleCollider;
+    private PlayerInput playerinput;
+    private Rigidbody rb;
+
+
     protected override void Awake()
     {
-        characterController = GetComponent<CharacterController>();
-        head = GetComponent<XRRig>().cameraGameObject;
-        leftHandController = GameObject.Find("LeftHand Controller");
+        cameraOffset = GameObject.Find("Camera Offset");
+        head = GameObject.Find("Camera Offset/Main Camera");
+        neck = GameObject.Find("Camera Offset/Neck");
+        leftHandController = GameObject.Find("Camera Offset/LeftHand Controller");
+        rightHandController = GameObject.Find("Camera Offset/RightHand Controller");
     }
 
     private void Start()
     {
         playerinput = PlayerInput.Instance;
-        PositionController();
+        rb = GetComponent<Rigidbody>();
+        BodyCapsuleCollider = GetComponent<CapsuleCollider>();
+        updateCollider();
     }
 
     // Update is called once per frame
     void Update()
     {
-        PositionController();
-        ApplyGravity();
-        UpdateMove(playerinput.GetLeftHandInputData().commonAxisStatus.thumb2DAxis,
-            playerinput.GetLeftHandInputData().commonButtonStatus.thumbButton);
-
         UpdateTurn(playerinput.GetRightHandInputData().commonAxisStatus.thumb2DAxis);
-
+        updateCollider();
         if (playerinput.GetRightHandInputData().commonButtonStatus.thumbButton && IsGrounded())
         {
             Jump();
         }
-
-        if (playerinput.GetRightHandInputData().otherButtonStatus.secondaryTouch)
-        {
-            playerinput.SendHapticImpulse(VRControllerNode.leftHand, 0.2f, 0.1f);
-        }
-        if (playerinput.GetRightHandInputData().otherButtonStatus.secondaryButton)
-        {
-            playerinput.SendHapticImpulse(VRControllerNode.leftHand, 0.6f, 10f);
-        }
-
     }
 
-    private void PositionController()
+    private void FixedUpdate()
     {
-        float headHeight = Mathf.Clamp(head.transform.localPosition.y, 1, 2);
-        characterController.height = headHeight;
-
-        Vector3 newCenter = Vector3.zero;
-        newCenter.y = characterController.height / 2;
-        newCenter.y += characterController.skinWidth;
-
-        newCenter.x = head.transform.localPosition.x;
-        newCenter.z = head.transform.localPosition.z;
-
-        characterController.center = newCenter;
+        UpdateMove(playerinput.GetLeftHandInputData().commonAxisStatus.thumb2DAxis,
+                playerinput.GetLeftHandInputData().commonButtonStatus.thumbButton);
     }
 
     private void UpdateMove(Vector2 position, bool IsCliked)
     {
         Vector3 direction = new Vector3(position.x, 0, position.y);
-        
-
         switch (moveDirectionType)
         {
             case MoveDirectionType.HeadBased:
             default:
-                Vector3 headRotation = new Vector3(0, head.transform.eulerAngles.y, 0);
+                Vector3 headRotation = new Vector3(0, neck.transform.eulerAngles.y, 0);
                 direction = Quaternion.Euler(headRotation) * direction;
                 break;
             case MoveDirectionType.ControllerBased:
                 Vector3 controllerRotation = new Vector3(0, leftHandController.transform.eulerAngles.y, 0);
                 direction = Quaternion.Euler(controllerRotation) * direction;
+                break;
+            case MoveDirectionType.HeadAndController:
+                Vector3 middleOfHands = (leftHandController.transform.position + rightHandController.transform.position) / 2;
+                Vector3 headLookAtMidOfH = Quaternion.LookRotation(middleOfHands - neck.transform.position).eulerAngles;
+                headLookAtMidOfH.x = headLookAtMidOfH.z = 0;
+                direction = Quaternion.Euler(headLookAtMidOfH) * direction;
                 break;
         }
 
@@ -162,72 +144,54 @@ public class Locomotion : LocomotionProvider
 
         if (IsCliked) movement *= m_RunAccelerationAmount;
 
-        characterController.Move(movement * Time.deltaTime);
+        rb.MovePosition(rb.position + movement * Time.fixedDeltaTime);
+        //rb.AddForce(movement * Time.fixedDeltaTime);
     }
 
     private bool IsGrounded()
     {
-        return Physics.Raycast(head.transform.position, Vector3.down, head.transform.localPosition.y + 0.45f, layerMask);
-    }
-
-    private void ApplyGravity()
-    {
-        if (IsGrounded())
-            playerYVelocity.y = -2f;
-        else
-            playerYVelocity.y += m_gravityAmount * Time.deltaTime;
-        characterController.Move(playerYVelocity * Time.deltaTime);
+        return Physics.Raycast(neck.transform.position, Vector3.down, head.transform.localPosition.y + neck.transform.localPosition.y + 0.45f, layerMask);
     }
 
     private void Jump()
     {
-        playerYVelocity.y = Mathf.Sqrt(JumpHeight * -2f * GravityAmount);
-        characterController.Move(playerYVelocity * Time.deltaTime);
+        rb.AddForce(Vector3.up * Mathf.Sqrt(JumpHeight * -2f * Physics.gravity.y), ForceMode.VelocityChange);
     }
 
-    bool IsTurnedInLastFrame = false;
+    bool isTurnedInLastFrame = false;
     private void UpdateTurn(Vector2 currentState)
     {
+        if (!CanBeginLocomotion())
+            return;
+
         switch (turnType)
         {
             case TurnType.SnapTurn:
-                // wait for a certain amount of time before allowing another turn.
-                if (m_TimeStarted > 0.0f && (m_TimeStarted + m_DebounceTime < Time.time))
-                {
-                    m_TimeStarted = 0.0f;
-                    return;
-                }
-
                 if (currentState.x > DeadZone || currentState.x < -DeadZone)
                 {
-                    if (IsTurnedInLastFrame == true)
+                    if (isTurnedInLastFrame == true)
                         return;
-                    StartTurn(currentState.x > 0 ? m_TurnAmount : -m_TurnAmount);
-                    IsTurnedInLastFrame = true;
+                    isTurnedInLastFrame = true;
+
+                    if (BeginLocomotion())
+                    {
+                        var xrRig = system.xrRig;
+                        if (xrRig != null)
+                        {
+                            xrRig.RotateAroundCameraUsingRigUp(currentState.x > 0 ? m_TurnAmount : -m_TurnAmount);
+                        }
+                        EndLocomotion();
+                    }
                 }
                 else
                 {
-                    IsTurnedInLastFrame = false;
-                }
-
-
-                if (Math.Abs(m_CurrentTurnAmount) > 0.0f && BeginLocomotion())
-                {
-                    var xrRig = system.xrRig;
-                    if (xrRig != null)
-                    {
-                        xrRig.RotateAroundCameraUsingRigUp(m_CurrentTurnAmount);
-                    }
-                    m_CurrentTurnAmount = 0.0f;
-                    EndLocomotion();
+                    isTurnedInLastFrame = false;
                 }
                 break;
 
             case TurnType.SmoothTurn:
                 if (currentState.x > DeadZone || currentState.x < -DeadZone)
                 {
-                    if (!CanBeginLocomotion())
-                        return;
                     if (BeginLocomotion())
                     {
                         var xrRig = system.xrRig;
@@ -242,16 +206,11 @@ public class Locomotion : LocomotionProvider
         }
     }
 
-    private void StartTurn(float amount)
+    private void updateCollider()
     {
-        if (m_TimeStarted != 0.0f)
-            return;
-
-        if (!CanBeginLocomotion())
-            return;
-
-        m_TimeStarted = Time.time;
-        m_CurrentTurnAmount = amount;
+        Vector3 headPosition = neck.transform.localPosition;
+        BodyCapsuleCollider.height = headPosition.y;
+        BodyCapsuleCollider.center = new Vector3(headPosition.x, headPosition.y / 2, headPosition.z);
     }
 
 }

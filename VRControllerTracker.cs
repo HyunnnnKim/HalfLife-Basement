@@ -60,14 +60,14 @@ namespace VRcustom
 
         [SerializeField]
         [Tooltip("Gets or sets the XRNode for this controller.")]
-        VRControllerNode m_ControllerNode;
+        VRDviceNode m_ControllerNode;
 
         /// <summary>Gets the InputDevice being used to read data from.</summary>
         public InputDevice inputDevice
         {
             get
             {
-                return m_InputDevice.isValid ? m_InputDevice : (m_InputDevice = playerInput.GetVRControllerDevice(m_ControllerNode));
+                return m_InputDevice.isValid ? m_InputDevice : (m_InputDevice = playerInput.GetVRDevice(m_ControllerNode));
             }
         }
         private InputDevice m_InputDevice;
