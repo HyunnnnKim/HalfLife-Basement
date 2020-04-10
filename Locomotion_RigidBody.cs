@@ -106,7 +106,7 @@ public class Locomotion_RigidBody : LocomotionProvider
     {
         UpdateTurn(playerinput.GetRightHandInputData().commonAxisStatus.thumb2DAxis);
         updateCollider();
-        if (playerinput.GetRightHandInputData().commonButtonStatus.thumbButton && IsGrounded())
+        if (playerinput.IsButtonPushed(ButtonName.thumb, VRDviceNode.RightHand) && IsGrounded())
         {
             Jump();
         }
@@ -134,7 +134,7 @@ public class Locomotion_RigidBody : LocomotionProvider
                 break;
             case MoveDirectionType.HeadAndController:
                 Vector3 middleOfHands = (leftHandController.transform.position + rightHandController.transform.position) / 2;
-                Vector3 headLookAtMidOfH = Quaternion.LookRotation(middleOfHands - neck.transform.position).eulerAngles;
+                Vector3 headLookAtMidOfH = Quaternion.LookRotation(middleOfHands - (neck.transform.position + ( -neck.transform.forward * 0.1f))).eulerAngles;
                 headLookAtMidOfH.x = headLookAtMidOfH.z = 0;
                 direction = Quaternion.Euler(headLookAtMidOfH) * direction;
                 break;
@@ -150,7 +150,7 @@ public class Locomotion_RigidBody : LocomotionProvider
 
     private bool IsGrounded()
     {
-        return Physics.Raycast(neck.transform.position, Vector3.down, head.transform.localPosition.y + neck.transform.localPosition.y + 0.45f, layerMask);
+        return Physics.Raycast(neck.transform.position, Vector3.down, neck.transform.localPosition.y + 0.1f, layerMask);
     }
 
     private void Jump()

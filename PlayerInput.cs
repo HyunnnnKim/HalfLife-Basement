@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
 
@@ -14,6 +15,16 @@ namespace VRcustom
         Head
     }
 
+    public enum ButtonName
+    {
+        primary,
+        thumb,
+        grip,
+        trigger,
+        secondary,
+        userPresence,
+        menu
+    }
 
     [DisallowMultipleComponent, AddComponentMenu("Custom/VR Input")]
     public class PlayerInput : Singleton<PlayerInput>
@@ -79,6 +90,8 @@ namespace VRcustom
         private HandController leftHand;
         private HandController rightHand;
 
+        private HandController beforeLeftHand;
+        private HandController beforeRightHand;
 
         void Start()
         {
@@ -101,11 +114,18 @@ namespace VRcustom
                 InputDevices.GetDevicesAtXRNode(XRNode.RightHand, rightHandDevices);
                 CheckAndAssignDevice(ref rightHandDevice, ref rightHandDevices);
             }
+            UpdateBeforeInput(leftHand, ref beforeLeftHand);
+            UpdateBeforeInput(rightHand, ref beforeRightHand);
             UpdateInput(leftHandDevice, ref leftHand);
             UpdateInput(rightHandDevice, ref rightHand);
             UpdateTrackingState(headDevice, ref head_TrackingState);
             UpdateTrackingState(leftHandDevice, ref hand_L_TrackingState);
             UpdateTrackingState(rightHandDevice, ref hand_R_TrackingState);
+        }
+
+        private void UpdateBeforeInput(HandController hand, ref HandController beforeHand)
+        {
+            beforeHand = hand;
         }
 
         void FindDevicesAtXRNode()
@@ -206,6 +226,112 @@ namespace VRcustom
                 case VRDviceNode.Head:
                     return headDevice;
             }
+        }
+
+        public bool IsButtonPushed(ButtonName buttonName, VRDviceNode node)
+        {
+            HandController beforeStates, currentStates;
+            bool beforeState, currentState;
+            switch (node)
+            {
+                case VRDviceNode.LeftHand:
+                    beforeStates = beforeLeftHand;
+                    currentStates = leftHand;
+                    break;
+                case VRDviceNode.RightHand:
+                    beforeStates = beforeRightHand;
+                    currentStates = rightHand;
+                    break;
+                default:
+                    return false;
+            }
+            switch (buttonName)
+            {
+                case ButtonName.grip:
+                    beforeState = beforeStates.commonButtonStatus.gripButton;
+                    currentState = currentStates.commonButtonStatus.gripButton;
+                    break;
+                case ButtonName.menu:
+                    beforeState = beforeStates.otherButtonStatus.menuButton;
+                    currentState = currentStates.otherButtonStatus.menuButton;
+                    break;
+                case ButtonName.primary:
+                    beforeState = beforeStates.commonButtonStatus.primaryButton;
+                    currentState = currentStates.commonButtonStatus.primaryButton;
+                    break;
+                case ButtonName.secondary:
+                    beforeState = beforeStates.otherButtonStatus.secondaryButton;
+                    currentState = currentStates.otherButtonStatus.secondaryButton;
+                    break;
+                case ButtonName.thumb:
+                    beforeState = beforeStates.commonButtonStatus.thumbButton;
+                    currentState = currentStates.commonButtonStatus.thumbButton;
+                    break;
+                case ButtonName.trigger:
+                    beforeState = beforeStates.commonButtonStatus.triggerButton;
+                    currentState = currentStates.commonButtonStatus.triggerButton;
+                    break;
+                case ButtonName.userPresence:
+                    beforeState = beforeStates.otherButtonStatus.userPresenceButton;
+                    currentState = currentStates.otherButtonStatus.userPresenceButton;
+                    break;
+                default:
+                    return false;
+            }
+            return beforeState == false && currentState == true;
+        }
+
+        public bool IsButtonReleased(ButtonName buttonName, VRDviceNode node)
+        {
+            HandController beforeStates, currentStates;
+            bool beforeState, currentState;
+            switch (node)
+            {
+                case VRDviceNode.LeftHand:
+                    beforeStates = beforeLeftHand;
+                    currentStates = leftHand;
+                    break;
+                case VRDviceNode.RightHand:
+                    beforeStates = beforeRightHand;
+                    currentStates = rightHand;
+                    break;
+                default:
+                    return false;
+            }
+            switch (buttonName)
+            {
+                case ButtonName.grip:
+                    beforeState = beforeStates.commonButtonStatus.gripButton;
+                    currentState = currentStates.commonButtonStatus.gripButton;
+                    break;
+                case ButtonName.menu:
+                    beforeState = beforeStates.otherButtonStatus.menuButton;
+                    currentState = currentStates.otherButtonStatus.menuButton;
+                    break;
+                case ButtonName.primary:
+                    beforeState = beforeStates.commonButtonStatus.primaryButton;
+                    currentState = currentStates.commonButtonStatus.primaryButton;
+                    break;
+                case ButtonName.secondary:
+                    beforeState = beforeStates.otherButtonStatus.secondaryButton;
+                    currentState = currentStates.otherButtonStatus.secondaryButton;
+                    break;
+                case ButtonName.thumb:
+                    beforeState = beforeStates.commonButtonStatus.thumbButton;
+                    currentState = currentStates.commonButtonStatus.thumbButton;
+                    break;
+                case ButtonName.trigger:
+                    beforeState = beforeStates.commonButtonStatus.triggerButton;
+                    currentState = currentStates.commonButtonStatus.triggerButton;
+                    break;
+                case ButtonName.userPresence:
+                    beforeState = beforeStates.otherButtonStatus.userPresenceButton;
+                    currentState = currentStates.otherButtonStatus.userPresenceButton;
+                    break;
+                default:
+                    return false;
+            }
+            return beforeState == true && currentState == false;
         }
 
         /// <summary>Play a haptic impulse on the controller if one is available</summary>
