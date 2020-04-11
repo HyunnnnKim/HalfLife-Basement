@@ -28,6 +28,7 @@ namespace HalfLight.Rig
 
             public Transform headConstraint;
             public Vector3 headBodyOffest;
+            public float turnSmooth;
         #endregion
 
         #region BuiltIn Methods
@@ -37,7 +38,10 @@ namespace HalfLight.Rig
 
             private void Update() {
                 transform.position = headConstraint.position + headBodyOffest;
-                transform.forward = Vector3.ProjectOnPlane(headConstraint.up, Vector3.up).normalized;
+
+                /* This will rotate the player body according to the head rotation. */
+                transform.forward = Vector3.Lerp(transform.forward,
+                        Vector3.ProjectOnPlane(headConstraint.up, Vector3.up).normalized, Time.deltaTime * turnSmooth);
 
                 head.Map();
                 leftHand.Map();

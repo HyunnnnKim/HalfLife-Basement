@@ -17,6 +17,7 @@ namespace HalfLight.Movement
                     RigidBody,
                     CharacterController
                 }
+                public movementType SelectedMovement { get { return selectedBody; } set { selectedBody = value; } }
 
                 public enum rotateType
                 {
@@ -24,10 +25,12 @@ namespace HalfLight.Movement
                     SmoothRotation,
                     HeadTurn
                 }
+                public rotateType SelectedRotation { get { return selectedRotation; } set { selectedRotation = value; } }
             #endregion
 
             #region Serialized Variables
                 [Header("Player Body")]
+                [SerializeField] private Rigidbody _rb;
                 [SerializeField] private movementType selectedBody = movementType.RigidBody;
                 [SerializeField] private rotateType selectedRotation;
 
@@ -35,11 +38,13 @@ namespace HalfLight.Movement
                 [SerializeField] private float walkSpeed = 5f;
                 [SerializeField] private float runSpeed = 10f;
                 [SerializeField] private float currentSpeed = 0f;
+                public float CurrentSpeed { get { return currentSpeed; } set { currentSpeed = value; } }
                 [SerializeField] private bool runKeyDown;
 
                 [Header("Jump")]
                 [SerializeField] private bool grounded = true;
                 [SerializeField] private float distance;
+                public float Distance { get { return distance; } set { distance = value; } }
                 [SerializeField] private float noJumpHeight;
                 [SerializeField] private bool jumpKeyDown;
 
@@ -60,13 +65,13 @@ namespace HalfLight.Movement
             #region Private Variables
                 private ControllerInput _controllerInput;
                 private SnapTurnProvider _snap;
-                private Rigidbody _rb;
                 private CharacterController _cc;
                 private GameObject _head;
 
                 private Vector2 _position;
                 private Vector2 _rotation;
                 private Vector3 _lookDirection;
+                private Vector3 _controllerDirection;
                 private Vector3 _groundPoint;
             #endregion
         #endregion
@@ -74,7 +79,7 @@ namespace HalfLight.Movement
         #region BUILTIN METHODS
             private void Start() {
                 _controllerInput = ControllerInput.Instance;
-                _rb = GetComponent<Rigidbody>();
+                _rb = GetComponentInChildren<Rigidbody>();
                 _cc = GetComponent<CharacterController>();
                 _head = GetComponent<XRRig>().cameraGameObject;
                 _snap = GetComponent<SnapTurnProvider>();
@@ -88,11 +93,16 @@ namespace HalfLight.Movement
                     jumpKeyDown = _controllerInput.getRightHand.primary2DPressed;
                     runKeyDown = _controllerInput.getLeftHand.primary2DPressed;
 
-                    _lookDirection = transform.TransformDirection(_position.x, 0f, _position.y);
+                    // _lookDirection = transform.TransformDirection(_position.x, 0f, _position.y);
+                    _position.x = Mathf.Clamp(_position.x, -90f, 90f);
+                    _lookDirection = new Vector3(_position.x, 0f, _position.y);
+                    _controllerDirection = new Vector3(0, _controllerInput.getLeftController.transform.eulerAngles.y, 0);
                 #endregion
             }
+            
             private void FixedUpdate() {
                 #region Movement
+                    Postion();
                     SetSpeed();
                     CanJump();
                     Rotate();
@@ -124,11 +134,6 @@ namespace HalfLight.Movement
 
         #region CUSTOM METHODS
             #region Common Methods
-                public rotateType SelectedRotation { get { return selectedRotation; } set { selectedRotation = value; } }
-                public movementType SelectedMovement { get { return selectedBody; } set { selectedBody = value; } }
-                public float CurrentSpeed { get { return currentSpeed; } set { currentSpeed = value; } }
-                public float Distance { get { return distance; } set { distance = value; } }
-
                 private void SetSpeed()
                 {
                     if(runKeyDown)
@@ -201,9 +206,13 @@ namespace HalfLight.Movement
                 }
             #endregion
             
+            /// <summary>
+            /// Currently using controller based movement only on RigidBody.
+            /// </summary>
             #region RigidBody Movement
                 private void RbMove()
                 {
+                    _lookDirection = Quaternion.Euler(_controllerDirection) * _lookDirection;
                     _rb.MovePosition(transform.position + _lookDirection * Time.deltaTime * currentSpeed); /* Parameters of MovePosition() >>> transform.position + transform.forward * Time.deltaTime */
                 }
 

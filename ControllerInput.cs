@@ -12,6 +12,7 @@ namespace HalfLight.Input
         #region Devices
             [Header("Controllers")]
             [SerializeField] private XRController leftController = null;
+            public XRController getLeftController { get { return leftController; } }
             [SerializeField] private XRController rightController = null;
 
             //[SerializeField] private XRNode liftXRNode = XRNode.LeftHand;
