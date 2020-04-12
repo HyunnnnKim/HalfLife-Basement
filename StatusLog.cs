@@ -30,7 +30,6 @@ namespace HalfLight.Output
             {
                 _statusLogText = "STATUS\n";
                 _statusLogText += "--------------------------------\n";
-                _statusLogText += "PlayerBody\t: " + playerStat.SelectedMovement + "\n";
                 _statusLogText += "Rotation\t: " + playerStat.SelectedRotation + "\n";
                 _statusLogText += "Speed\t: " + playerStat.CurrentSpeed.ToString() + "\n";
                 _statusLogText += "Distance\t: " + playerStat.Distance.ToString() + "\n";

@@ -28,6 +28,8 @@ namespace HalfLight.Input
                 /* Primary2DAxis */
                 private Vector2 _primary2DValue;
                 public Vector2 primary2DValue { get { return _primary2DValue; } set { _primary2DValue = value; } }
+                private bool _primary2DValueState;
+                public bool Primary2DValueState { get { return _primary2DValueState; } set { _primary2DValueState = value; } }
                 private bool _primary2DPressed;
                 public bool primary2DPressed { get { return _primary2DPressed; } set { _primary2DPressed = value; } }
                 private bool _primary2DTouchPressed;
@@ -111,7 +113,7 @@ namespace HalfLight.Input
         #region Custom Methods
             private void ReadInput(InputDevice device, ref InputValues hand)
             {
-                device.TryGetFeatureValue(CommonUsages.primary2DAxis, out Vector2 primary2DValue);
+                hand.Primary2DValueState = device.TryGetFeatureValue(CommonUsages.primary2DAxis, out Vector2 primary2DValue);
                 hand.primary2DValue = primary2DValue;
                 device.TryGetFeatureValue(CommonUsages.primary2DAxisClick, out bool primary2DPressed);
                 hand.primary2DPressed = primary2DPressed;
