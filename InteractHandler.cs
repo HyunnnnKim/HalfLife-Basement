@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -14,7 +15,8 @@ namespace HalfLight.Interact
         public enum interactType
         {
             Fixed,
-            Spring
+            Spring,
+            ParentConstraint
         }
 
         public enum hand
@@ -25,20 +27,27 @@ namespace HalfLight.Interact
         #endregion
 
         #region Serialized Field
-        [SerializeField] private GameObject playerBody;
-
+        [Header("Hand")]
         [SerializeField] private hand selectedHand;
-        [SerializeField] private interactType selectedGrab;
 
-        [SerializeField] private bool grabHold;
+        [Header("Grabbing")]
+        [SerializeField] private interactType selectedGrab;
+        [SerializeField] private bool gripHold;
+
+        [SerializeField] private GameObject playerBody;
         #endregion
 
         #region Private Field
         private ControllerInput _inputs;
+        public ControllerInput Inputs { get { return _inputs; } set { _inputs = value; } }
+        private ControllerInput.InputValues _controller;
+        public ControllerInput.InputValues Controller { get { return _controller;} set { _controller = value;} }
         private Rigidbody _rb;
-        private LayerMask _isInteractable;
-
-        private ConstraintSource constraintSource;
+        public Rigidbody RB { get { return _rb; } set { _rb = value; } }
+        private string _handName;
+        public string HandName { get { return _handName; } set { _handName = value; } }
+        private ConstraintSource _constraintSource;
+        public ConstraintSource ConstraintSource { get { return _constraintSource; } set { _constraintSource = value; } }
 
         public Vector3 prePos;
         public Vector3 dis;
@@ -47,43 +56,106 @@ namespace HalfLight.Interact
         #region BuiltIn Methods
         private void Start()
         {
-            _inputs = ControllerInput.Instance;
-            _rb = GetComponent<Rigidbody>();
+            #region Initializing Components
+            Inputs = ControllerInput.Instance;
+            RB = GetComponent<Rigidbody>();
+            #endregion
+            
+            #region Select Hand
+            GetHand(selectedHand);
+            #endregion
         }
 
         private void Update()
         {
-            GetGrab(selectedHand);
+            isGrip(Controller);
         }
         #endregion
 
-        #region Custom Methods
-        private void OnTriggerStay(Collider collider)
+        #region Selected Hand Input
+        private void GetHand(hand selectedHand)
         {
-            #region Grabbing
-            if (collider.gameObject.GetComponent<Rigidbody>() != null
-                    && collider.gameObject.layer == LayerMask.NameToLayer("Grabable"))
+            switch (selectedHand)
             {
-                if (grabHold == true)
+                case hand.leftHand:
+                    Controller = Inputs.getLeftHand;
+                    HandName = Enum.GetName(typeof(hand), 1);
+                    break;
+
+                case hand.rightHand:
+                    Controller = Inputs.getRightHand;
+                    HandName = Enum.GetName(typeof(hand), 2);
+                    break;
+            }
+        }
+        #endregion
+
+        #region Check Grip
+        private void isGrip(ControllerInput.InputValues Controller)
+        {
+            if (Controller.gripButtonPressed)
+            {
+                gripHold = true;
+            }
+            else
+            {
+                gripHold = false;
+            }
+        }
+        #endregion
+
+        private bool CanCreateJoint(GameObject collider)
+        {
+            if (collider.GetComponent<Joint>().connectedBody.name != HandName)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        #region Grabbing & Climbing
+        private void OnTriggerStay(Collider other)
+        {
+            GameObject collider = other.gameObject;
+
+            #region Grabbing
+            if (collider.GetComponent<Rigidbody>() != null
+                    && collider.layer == LayerMask.NameToLayer("Grabable")
+                        && collider.GetComponent<Joint>().connectedBody.name != HandName)
+            {
+                if (gripHold == true)
                 {
                     #region Create Joint
                     switch (selectedGrab)
                     {
                         case interactType.Fixed:
-                            if (collider.gameObject.GetComponent<FixedJoint>() == null)
+                            if (collider.GetComponent<FixedJoint>() == null)
                             {
-                                collider.gameObject.AddComponent<FixedJoint>();
-                                collider.gameObject.GetComponent<FixedJoint>().connectedBody = _rb;
+                                collider.AddComponent<FixedJoint>();
+                                collider.GetComponent<FixedJoint>().connectedBody = RB;
                             }
                             break;
 
                         case interactType.Spring:
-                            if (collider.gameObject.GetComponent<SpringJoint>() == null)
+                            if (collider.GetComponent<SpringJoint>() == null)
                             {
-                                collider.gameObject.AddComponent<SpringJoint>();
-                                collider.gameObject.GetComponent<SpringJoint>().connectedBody = _rb;
+                                collider.AddComponent<SpringJoint>();
+                                collider.GetComponent<SpringJoint>().connectedBody = RB;
                             }
                             break;
+
+                        case interactType.ParentConstraint:
+                            #region Parent Constraint
+                            // var parentConstraint = collider.gameObject.AddComponent<ParentConstraint>();
+                            // constraintSource.sourceTransform = RB.transform;
+                            // constraintSource.weight = 1f;
+
+                            // parentConstraint.AddSource(constraintSource);
+                            // parentConstraint.weight = 1f;
+                            // parentConstraint.constraintActive = true;
+                            // parentConstraint.locked = true;
+                            break;
+                            #endregion
                     }
                     #endregion
 
@@ -102,7 +174,7 @@ namespace HalfLight.Interact
                     }
                     #endregion
                 }
-                else if (collider.gameObject.GetComponent<Joint>() != null)
+                else
                 {
                     DestroyJoint(collider.gameObject);
                 }
@@ -110,58 +182,32 @@ namespace HalfLight.Interact
             #endregion
 
             #region Climbing
-            if (collider.gameObject.layer == LayerMask.NameToLayer("Climbable"))
+            if (collider.layer == LayerMask.NameToLayer("Climbable"))
             {
-                prePos = _inputs.getLeftXRController.transform.position;
-                if (grabHold == true)
+                prePos = _inputs.getLeftXRController.transform.localPosition;
+                if (gripHold == true)
                 {
                     #region Grab
-                    // var parentConstraint = collider.gameObject.AddComponent<ParentConstraint>();
-                    // constraintSource.sourceTransform = _leftController.transform;
-                    // constraintSource.weight = 1f;
-
-                    // parentConstraint.AddSource(constraintSource);
-                    // parentConstraint.weight = 1f;
-                    // parentConstraint.constraintActive = true;
-                    // parentConstraint.locked = true;
+                    
                     #endregion
 
-                    collider.gameObject.AddComponent<FixedJoint>();
-                    collider.gameObject.GetComponent<FixedJoint>().connectedBody = _rb;
-
-                    dis += (prePos - _inputs.getLeftXRController.transform.position);
+                    dis += (prePos - _inputs.getLeftXRController.transform.localPosition);
                     Debug.Log("dis: " + dis);
                 }
-                else if (collider.gameObject.GetComponent<Joint>() != null)
-                {
-                    prePos = _inputs.getLeftXRController.transform.position;
-                    DestroyJoint(collider.gameObject);
-                }
+
             }
             #endregion
         }
+        #endregion
+        
 
         private void DestroyJoint(GameObject go)
         {
-            if (grabHold == false)
+            if (gripHold == false)
             {
                 Destroy(go.GetComponent<Joint>());
                 Debug.Log("Destroy");
             }
         }
-
-        private void GetGrab(hand selectedGrab)
-        {
-            switch (selectedHand)
-            {
-                case hand.leftHand:
-                    grabHold = _inputs.getLeftHand.gripButtonPressed;
-                    break;
-                case hand.rightHand:
-                    grabHold = _inputs.getRightHand.gripButtonPressed;
-                    break;
-            }
-        }
-        #endregion
     }
 }

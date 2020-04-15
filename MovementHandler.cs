@@ -20,15 +20,9 @@ namespace HalfLight.Movement
         #endregion
 
         #region Serialized Variables
-        [Header("Player")]
-        [SerializeField] private Rigidbody _rb;
-        [SerializeField] private rotateType selectedRotation;
-
         [Header("Movement")]
         [SerializeField] private float walkSpeed;
-        public float WalkSpeed { get { return walkSpeed; } set { walkSpeed = value; } }
         [SerializeField] private float runSpeed;
-        public float RunSpeed { get { return runSpeed; } set { runSpeed = value; } }
         [SerializeField] private float currentSpeed;
         public float CurrentSpeed { get { return currentSpeed; } set { currentSpeed = value; } }
         [SerializeField] private float moveForce;
@@ -36,24 +30,35 @@ namespace HalfLight.Movement
 
         [Header("Jump")]
         [SerializeField] private float jumpForce;
+        [SerializeField] private bool jumpKeyDown;
         [SerializeField] private bool grounded = false;
         [SerializeField] private float distance;
         public float Distance { get { return distance; } set { distance = value; } }
         [SerializeField] private float noJumpHeight;
-        [SerializeField] private bool jumpKeyDown;
 
         [Header("Rotation")]
+        [SerializeField] private rotateType selectedRotation;
         [SerializeField] private float rotationSensitivity = 70f;
         #endregion
 
         #region Private Variables
-        private ControllerInput _controllerInput;
+        private ControllerInput _inputs;
+        public ControllerInput Inputs { get { return _inputs; } set { _inputs = value; } }
         private SnapTurnProvider _snap;
+        public SnapTurnProvider Snap { get { return _snap; } set { _snap = value; } }
+        private Rigidbody _rb;
+        public Rigidbody RB { get { return _rb; } set { _rb = value; } }
+
         private Vector2 _position;
+        public Vector2 Position { get { return _position; } set { _position = value; } }
         private Vector2 _rotation;
+        public Vector2 Rotation { get { return _rotation; } set { _rotation = value; } }
         private Vector3 _lookDirection;
+        public Vector3 LookDirect { get { return _lookDirection; } set { _lookDirection = value; } }
         private Vector3 _controllerDirection;
+        public Vector3 ConDirect { get { return _controllerDirection; } set { _controllerDirection = value; } }
         private Vector3 _groundPoint;
+        public Vector3 GroundPoint { get { return _groundPoint; } set { _groundPoint = value; } }
 
         private float _targetSpeed;
         public float TargetSpeed { get { return _targetSpeed; } set { _targetSpeed = value; } }
@@ -63,37 +68,37 @@ namespace HalfLight.Movement
         private void Start()
         {
             #region Initializing Components
-            _controllerInput = ControllerInput.Instance;
-            _rb = GetComponent<Rigidbody>();
-            _snap = GetComponent<SnapTurnProvider>();
+            Inputs = ControllerInput.Instance;
+            RB = GetComponent<Rigidbody>();
+            Snap = GetComponent<SnapTurnProvider>();
             #endregion
         }
 
         private void Update()
         {
             #region Controller Inputs
-            _position = _controllerInput.getLeftHand.primary2DValue;
-            _rotation = _controllerInput.getRightHand.primary2DValue;
+            Position = Inputs.getLeftHand.primary2DValue;
+            Rotation = Inputs.getRightHand.primary2DValue;
 
-            jumpKeyDown = _controllerInput.getRightHand.primary2DPressed;
-            runKeyDown = _controllerInput.getLeftHand.primary2DPressed;
+            jumpKeyDown = Inputs.getRightHand.primary2DPressed;
+            runKeyDown = Inputs.getLeftHand.primary2DPressed;
 
-            _lookDirection = new Vector3(_position.x, 0f, _position.y);
-            _controllerDirection = new Vector3(0, _controllerInput.getLeftXRController.transform.eulerAngles.y, 0);
+            LookDirect = new Vector3(Position.x, 0f, Position.y);
+            ConDirect = new Vector3(0, Inputs.getLeftXRController.transform.eulerAngles.y, 0);
             #endregion
         }
 
         private void FixedUpdate()
         {
             #region Update Value
-            currentSpeed = _rb.velocity.magnitude;
+            currentSpeed = RB.velocity.magnitude;
             #endregion
             
             #region Movement
-            CanJump(_rb);
+            CanJump(RB);
             Rotate();
-            RbMove(_rb, moveForce);
-            RbJump(_rb, jumpForce);
+            RbMove(RB, moveForce);
+            RbJump(RB, jumpForce);
             #endregion
         }
         #endregion
@@ -106,10 +111,10 @@ namespace HalfLight.Movement
             {
                 if (String.Compare(_rayHit.collider.tag, "ground", StringComparison.Ordinal) == 0) /* StringComparison.Ordinal looks purely at the raw byte(s) that represent the character. */
                 {
-                    _groundPoint = _rayHit.point;
+                    GroundPoint = _rayHit.point;
                 }
 
-                distance = Vector3.Distance(rigidbody.transform.position, _groundPoint);
+                distance = Vector3.Distance(rigidbody.transform.position, GroundPoint);
                 // Debug.Log("transform: " + rigidbody.transform.position + " Distance: " + distance);
 
                 if (distance > noJumpHeight)
@@ -139,7 +144,7 @@ namespace HalfLight.Movement
                     }
                     float perc = currentLerpTime / lerpTime;
 
-                    transform.Rotate(Vector3.up * _rotation.x * rotationSensitivity * perc);
+                    transform.Rotate(Vector3.up * Rotation.x * rotationSensitivity * perc);
                     break;
 
                 default:
@@ -154,11 +159,11 @@ namespace HalfLight.Movement
         private void RbMove(Rigidbody rigidbody, float force, ForceMode mode = ForceMode.Force)
         {
             // _rb.MovePosition(transform.position + _lookDirection * Time.deltaTime * currentSpeed); /* Parameters of MovePosition() >>> transform.position + transform.forward * Time.deltaTime */
-            if (_controllerInput.getLeftHand.primary2DValueState)
+            if (Inputs.getLeftHand.primary2DValueState)
             {
-                _lookDirection = Quaternion.Euler(_controllerDirection) * _lookDirection;
-                _targetSpeed = runKeyDown ? runSpeed : walkSpeed;
-                Vector3 movement = _lookDirection * _targetSpeed;
+                LookDirect = Quaternion.Euler(ConDirect) * LookDirect;
+                TargetSpeed = runKeyDown ? runSpeed : walkSpeed;
+                Vector3 movement = LookDirect * TargetSpeed;
 
                 rigidbody.AddForce(movement * force, mode);
             }
