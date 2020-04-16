@@ -7,7 +7,7 @@ using VRcustom;
 
 public class Locomotion_RigidBody : LocomotionProvider
 {
-
+    static public bool isClimbing = false;
  // Start is called before the first frame update
     public enum MoveDirectionType
     {
@@ -76,8 +76,6 @@ public class Locomotion_RigidBody : LocomotionProvider
     private GameObject leftHandController = null;
     private GameObject rightHandController = null;
     private GameObject neck = null;
-    private GameObject head = null;
-    private GameObject cameraOffset = null;
 
     private CapsuleCollider BodyCapsuleCollider;
     private PlayerInput playerinput;
@@ -86,8 +84,6 @@ public class Locomotion_RigidBody : LocomotionProvider
 
     protected override void Awake()
     {
-        cameraOffset = GameObject.Find("Camera Offset");
-        head = GameObject.Find("Camera Offset/Main Camera");
         neck = GameObject.Find("Camera Offset/Neck");
         leftHandController = GameObject.Find("Camera Offset/LeftHand Controller");
         rightHandController = GameObject.Find("Camera Offset/RightHand Controller");
@@ -144,8 +140,7 @@ public class Locomotion_RigidBody : LocomotionProvider
 
         if (IsCliked) movement *= m_RunAccelerationAmount;
 
-        rb.MovePosition(rb.position + movement * Time.fixedDeltaTime);
-        //rb.AddForce(movement * Time.fixedDeltaTime);
+        rb.AddForce(movement);
     }
 
     private bool IsGrounded()
@@ -208,9 +203,18 @@ public class Locomotion_RigidBody : LocomotionProvider
 
     private void updateCollider()
     {
-        Vector3 headPosition = neck.transform.localPosition;
-        BodyCapsuleCollider.height = headPosition.y;
-        BodyCapsuleCollider.center = new Vector3(headPosition.x, headPosition.y / 2, headPosition.z);
+        if (isClimbing)
+        {
+            Vector3 neckPosition = neck.transform.localPosition;
+            BodyCapsuleCollider.height = 0.1f;
+            BodyCapsuleCollider.center = new Vector3(neckPosition.x, neckPosition.y + 0.05f, neckPosition.z);
+        }
+        else
+        {
+            Vector3 neckPosition = neck.transform.localPosition;
+            BodyCapsuleCollider.height = neckPosition.y;
+            BodyCapsuleCollider.center = new Vector3(neckPosition.x, neckPosition.y / 2, neckPosition.z);
+        }
     }
 
 }

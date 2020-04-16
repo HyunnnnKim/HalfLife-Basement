@@ -8,6 +8,7 @@ using UnityEngine.XR;
 
 namespace VRcustom
 {
+
     public enum VRDviceNode
     {
         RightHand,
@@ -201,6 +202,19 @@ namespace VRcustom
         {
             return rightHand;
         }
+
+        public HandController GetHandInputData(VRDviceNode hand)
+        {
+            switch (hand)
+            {
+                case VRDviceNode.LeftHand:
+                default:
+                    return leftHand;
+                case VRDviceNode.RightHand:
+                    return rightHand;
+            }
+        }
+
         public DeviceTrackingState GetDeviceTrackingStateData(VRDviceNode node)
         {
             switch (node)
